@@ -55,6 +55,8 @@ func (world *World) GenerateDebugString() string {
 
 func (world *World) Update() {
 	world.Player.Update()
+
+	world.Game.Camera.Position[0] = world.Player.Object.Position.X - (world.Game.Camera.ViewPort[0] / 2)
 }
 
 func (world *World) Draw(screen *ebiten.Image) {
