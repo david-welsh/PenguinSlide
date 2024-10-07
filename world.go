@@ -46,6 +46,10 @@ func (world *World) Init() {
 	world.Player = NewPlayer(world.Space)
 }
 
+func (world *World) GenerateDebugString() string {
+	return ""
+}
+
 func (world *World) Update() {
 	world.Player.Update()
 }

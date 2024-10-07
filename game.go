@@ -42,19 +42,19 @@ func (g *Game) Update() error {
 }
 
 func generateDebugString() string {
-	fps := fmt.Sprintf("%d FPS", int(ebiten.ActualFPS()))
-	screenSize := fmt.Sprintf("Screen: %dx%d", ScreenWidth, ScreenHeight)
-	return fmt.Sprintf("%s\n%s\n", fps, screenSize)
+	screenInfo := fmt.Sprintf("%d FPS, Screen: %dx%d", int(ebiten.ActualFPS()), ScreenWidth, ScreenHeight)
+	return fmt.Sprintf("%s", screenInfo)
 }
 
-func drawDebugText(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, generateDebugString())
+func drawDebugText(screen *ebiten.Image, worldDebug string) {
+	debugText := fmt.Sprintf("%s\n%s", generateDebugString(), worldDebug)
+	ebitenutil.DebugPrint(screen, debugText)
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.World.Draw(screen)
 	if g.Debug {
-		drawDebugText(screen)
+		drawDebugText(screen, g.World.GenerateDebugString())
 	}
 }
 
