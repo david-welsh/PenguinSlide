@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/solarlune/resolv"
@@ -47,7 +48,9 @@ func (world *World) Init() {
 }
 
 func (world *World) GenerateDebugString() string {
-	return ""
+	worldDebug := ""
+	playerDebug := world.Player.GenerateDebugText()
+	return fmt.Sprintf("%s\n%s", worldDebug, playerDebug)
 }
 
 func (world *World) Update() {

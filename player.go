@@ -3,6 +3,7 @@ package main
 import (
 	"PenguinSlide/assets"
 	"bytes"
+	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/solarlune/resolv"
@@ -171,9 +172,15 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	vector.DrawFilledRect(screen, float32(p.Object.Position.X), float32(p.Object.Position.Y), float32(p.Object.Size.X), float32(p.Object.Size.Y), cl, false)
 }
 
+func (p *Player) GenerateDebugText() string {
+	speed := fmt.Sprintf("Speed: %f, %f", p.Speed.X, p.Speed.Y)
+	position := fmt.Sprintf("X: %f, %f", p.Object.Position.X, p.Object.Position.Y)
+	return fmt.Sprintf("%s\n%s", speed, position)
+}
+
 func NewPlayer(space *resolv.Space) *Player {
 	p := &Player{
-		Object: resolv.NewObject(32, 0, 100, 140),
+		Object: resolv.NewObject(32, 0, walkBox.X, walkBox.Y),
 	}
 
 	p.Object.SetShape(resolv.NewRectangle(0, 0, p.Object.Size.X, p.Object.Size.Y))
