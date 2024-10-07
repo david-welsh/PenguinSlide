@@ -17,46 +17,69 @@ type Player struct {
 	Speed       resolv.Vector
 	OnGround    *resolv.Object
 	FacingRight bool
+	Sliding     bool
 }
 
 var (
 	walkingImage *ebiten.Image
 	slidingImage *ebiten.Image
+	walkBox      resolv.Vector
+	slideBox     resolv.Vector
 )
 
-func init() {
-	wImg, _, err := image.Decode(bytes.NewReader(assets.WalkingPng))
+func loadImage(img []byte) *ebiten.Image {
+	wImg, _, err := image.Decode(bytes.NewReader(img))
 	if err != nil {
 		log.Fatal(err)
 	}
-	origWalkingImage := ebiten.NewImageFromImage(wImg)
+	origImage := ebiten.NewImageFromImage(wImg)
 
-	s := origWalkingImage.Bounds().Size()
-	walkingImage = ebiten.NewImage(s.X, s.Y)
+	s := origImage.Bounds().Size()
+	newImage := ebiten.NewImage(s.X, s.Y)
 
 	op := &ebiten.DrawImageOptions{}
-	walkingImage.DrawImage(origWalkingImage, op)
+	newImage.DrawImage(origImage, op)
+	return newImage
+}
 
-	sImg, _, sErr := image.Decode(bytes.NewReader(assets.SlidingPng))
-	if sErr != nil {
-		log.Fatal(sErr)
+func init() {
+	walkingImage = loadImage(assets.WalkingPng)
+	slidingImage = loadImage(assets.SlidingPng)
+
+	walkBox = resolv.Vector{X: 100, Y: 140}
+	slideBox = resolv.Vector{X: 170, Y: 70}
+}
+
+func (p *Player) adjustCollisionBox(newWidth, newHeight float64) {
+	oldHeight := p.Object.Size.Y
+	oldWidth := p.Object.Size.X
+
+	p.Object.Size.X = newWidth
+	p.Object.Size.Y = newHeight
+
+	p.Object.SetShape(resolv.NewRectangle(0, 0, newWidth, newHeight))
+	p.Object.Position.Y += oldHeight - newHeight
+	if !p.FacingRight {
+		p.Object.Position.X -= newWidth - oldWidth
 	}
-	origSlidingImage := ebiten.NewImageFromImage(sImg)
-
-	sz := origSlidingImage.Bounds().Size()
-	slidingImage = ebiten.NewImage(sz.X, sz.Y)
-
-	op2 := &ebiten.DrawImageOptions{}
-	slidingImage.DrawImage(origSlidingImage, op2)
 }
 
 func (p *Player) Update() {
-	friction := 0.05
-	accel := 0.5 + friction
-	maxSpeed := 4.0
+	friction := 0.01
+	accel := 0.2 + friction
+	maxWalkSpeed := 1.0
+	maxSlideSpeed := 6.0
 	gravity := 0.75
 
 	p.Speed.Y += gravity
+
+	if ebiten.IsKeyPressed(ebiten.KeySpace) || (p.Speed.X > maxWalkSpeed || p.Speed.X < -maxWalkSpeed) {
+		p.Sliding = true
+		p.adjustCollisionBox(slideBox.X, slideBox.Y)
+	} else {
+		p.Sliding = false
+		p.adjustCollisionBox(walkBox.X, walkBox.Y)
+	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.GamepadAxisValue(0, 0) > 0.1 {
 		p.Speed.X += accel
@@ -74,6 +97,11 @@ func (p *Player) Update() {
 		p.Speed.X += friction
 	} else {
 		p.Speed.X = 0
+	}
+
+	maxSpeed := maxWalkSpeed
+	if p.Sliding {
+		maxSpeed = maxSlideSpeed
 	}
 
 	if p.Speed.X > maxSpeed {
@@ -126,7 +154,7 @@ func (p *Player) Update() {
 
 func (p *Player) Draw(screen *ebiten.Image) {
 	img := walkingImage
-	if p.Speed.X > 0 || p.Speed.X < 0 {
+	if p.Sliding {
 		img = slidingImage
 	}
 
