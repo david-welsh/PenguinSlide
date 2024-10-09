@@ -44,7 +44,7 @@ func (world *World) Init() {
 	floor := resolv.NewObject(0, gh-100, gw, 100, "solid")
 	world.Space.Add(floor)
 
-	world.Player = NewPlayer(world.Space)
+	world.Player = NewPlayer(world.Space, world.Game)
 }
 
 func (world *World) GenerateDebugString() string {

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/solarlune/resolv"
 	"image"
@@ -19,6 +20,7 @@ type Player struct {
 	OnGround    *resolv.Object
 	FacingRight bool
 	Sliding     bool
+	Game        *Game
 }
 
 var (
@@ -71,6 +73,7 @@ func (p *Player) Update() {
 	maxWalkSpeed := 1.0
 	maxSlideSpeed := 6.0
 	gravity := 0.75
+	jumpSpeed := 14.0
 
 	p.Speed.Y += gravity
 
@@ -111,13 +114,15 @@ func (p *Player) Update() {
 		p.Speed.X = -maxSpeed
 	}
 
+	if inpututil.IsKeyJustPressed(ebiten.KeyX) || inpututil.IsGamepadButtonJustPressed(0, 0) {
+		if p.OnGround != nil {
+			p.Speed.Y = -jumpSpeed
+		}
+	}
+
 	dx := p.Speed.X
 
 	p.Object.Position.X += dx
-
-	if p.Speed.X > 0 || p.Speed.Y < 0 {
-		p.Object.Shape.Rotate(math.Pi / 2)
-	}
 
 	p.OnGround = nil
 
@@ -168,8 +173,10 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(float64(p.Object.Position.X), float64(p.Object.Position.Y))
 	screen.DrawImage(img, op)
 
-	cl := color.RGBA{R: 255, A: 120}
-	vector.DrawFilledRect(screen, float32(p.Object.Position.X), float32(p.Object.Position.Y), float32(p.Object.Size.X), float32(p.Object.Size.Y), cl, false)
+	if p.Game.Debug {
+		cl := color.RGBA{R: 255, A: 120}
+		vector.DrawFilledRect(screen, float32(p.Object.Position.X), float32(p.Object.Position.Y), float32(p.Object.Size.X), float32(p.Object.Size.Y), cl, false)
+	}
 }
 
 func (p *Player) GenerateDebugText() string {
@@ -178,9 +185,10 @@ func (p *Player) GenerateDebugText() string {
 	return fmt.Sprintf("%s\n%s", speed, position)
 }
 
-func NewPlayer(space *resolv.Space) *Player {
+func NewPlayer(space *resolv.Space, game *Game) *Player {
 	p := &Player{
 		Object: resolv.NewObject(32, 0, walkBox.X, walkBox.Y),
+		Game:   game,
 	}
 
 	p.Object.SetShape(resolv.NewRectangle(0, 0, p.Object.Size.X, p.Object.Size.Y))

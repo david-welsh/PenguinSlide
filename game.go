@@ -70,7 +70,7 @@ func NewGame() (*Game, error) {
 		Camera: Camera{ViewPort: f64.Vec2{ScreenWidth, ScreenHeight}},
 	}
 
-	g.WorldImage = ebiten.NewImage(ScreenWidth*20, ScreenHeight*5)
+	g.WorldImage = ebiten.NewImage(ScreenWidth*10, ScreenHeight*5)
 
 	g.World = NewWorld(g)
 
