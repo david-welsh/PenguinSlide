@@ -51,11 +51,15 @@ func (world *World) Init() {
 
 	fs1 := cp.NewSegment(world.Space.StaticBody, cp.Vector{X: 0, Y: gh - 110}, cp.Vector{X: gw / 2, Y: gh - 110}, 0)
 	fs1.SetFriction(0.7)
-	fs2 := cp.NewSegment(world.Space.StaticBody, cp.Vector{X: gw / 2, Y: gh - 110}, cp.Vector{X: gw, Y: gh - 80}, 0)
-	fs2.SetFriction(0.7)
-
 	world.Space.AddShape(fs1)
+
+	fs2 := cp.NewSegment(world.Space.StaticBody, cp.Vector{X: gw / 2, Y: gh - 110}, cp.Vector{X: gw, Y: gh - 80}, 0)
+	fs2.SetFriction(0.2)
 	world.Space.AddShape(fs2)
+
+	fs3 := cp.NewSegment(world.Space.StaticBody, cp.Vector{X: gw, Y: gh - 80}, cp.Vector{X: gw * 2, Y: gh - 80}, 0)
+	fs3.SetFriction(0.2)
+	world.Space.AddShape(fs3)
 
 	world.Space.Iterations = 10
 	world.Space.SetGravity(cp.Vector{Y: 400})

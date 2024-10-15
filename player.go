@@ -84,7 +84,7 @@ func (p *Player) Update() {
 		if wasSliding {
 			p.Shape.Space().RemoveShape(p.Shape)
 			p.Shape = p.Space.AddShape(cp.NewBox(p.Body, walkBox.X*2, walkBox.Y*2, 0))
-			p.Shape.SetFriction(0.7)
+			p.Shape.SetFriction(0.3)
 			newPos := p.Body.Position()
 			newPos.Y -= p.CurrentBox.Y
 			p.Body.SetPosition(newPos)
@@ -137,7 +137,7 @@ func NewPlayer(space *cp.Space, game *Game) *Player {
 	body.SetPosition(cp.Vector{X: 100, Y: 100})
 
 	walkingShape := space.AddShape(cp.NewBox(body, walkBox.X*2, walkBox.Y*2, 0))
-	walkingShape.SetFriction(0.1)
+	walkingShape.SetFriction(0.7)
 
 	return &Player{
 		Space:       space,
