@@ -2,19 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/demouth/ebitencp"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/vector"
-	"github.com/solarlune/resolv"
+	"github.com/jakecoffman/cp/v2"
 	"image/color"
 )
 
 var (
-	SnowColor = color.RGBA{
-		R: 230,
-		G: 230,
-		B: 240,
-		A: 255,
-	}
 	SkyColor = color.RGBA{
 		R: 180,
 		G: 180,
@@ -25,8 +19,10 @@ var (
 
 type World struct {
 	Game   *Game
-	Space  *resolv.Space
+	Space  *cp.Space
 	Player *Player
+	Drawer *ebitencp.Drawer
+	Camera Camera
 }
 
 func NewWorld(game *Game) *World {
@@ -39,35 +35,63 @@ func (world *World) Init() {
 	gw := float64(world.Game.Width)
 	gh := float64(world.Game.Height)
 
-	world.Space = resolv.NewSpace(int(gw), int(gh), 16, 16)
+	world.Camera = Camera{
+		Zoom:   1,
+		Offset: cp.Vector{X: -ScreenWidth / 2, Y: -ScreenHeight / 2},
+	}
 
-	floor := resolv.NewObject(0, gh-100, gw, 100, "solid")
-	world.Space.Add(floor)
+	world.Drawer = ebitencp.NewDrawer(0, 0)
+	world.Drawer.FlipYAxis = true
+	world.Drawer.GeoM.Translate(ScreenWidth/2, ScreenHeight/2)
+
+	world.Space = cp.NewSpace()
+
+	world.Space.SleepTimeThreshold = 0.5
+	world.Space.SetCollisionSlop(0.5)
+
+	fs1 := cp.NewSegment(world.Space.StaticBody, cp.Vector{X: 0, Y: gh - 110}, cp.Vector{X: gw / 2, Y: gh - 110}, 0)
+	fs1.SetFriction(0.7)
+	fs2 := cp.NewSegment(world.Space.StaticBody, cp.Vector{X: gw / 2, Y: gh - 110}, cp.Vector{X: gw, Y: gh - 80}, 0)
+	fs2.SetFriction(0.7)
+
+	world.Space.AddShape(fs1)
+	world.Space.AddShape(fs2)
+
+	world.Space.Iterations = 10
+	world.Space.SetGravity(cp.Vector{Y: 400})
+	world.Space.SetCollisionSlop(0.5)
 
 	world.Player = NewPlayer(world.Space, world.Game)
 }
 
 func (world *World) GenerateDebugString() string {
 	worldDebug := ""
+	cameraDebug := world.Camera.GenerateDebugText()
 	playerDebug := world.Player.GenerateDebugText()
-	return fmt.Sprintf("%s\n%s", worldDebug, playerDebug)
+	return fmt.Sprintf("%s\n%s\n%s", worldDebug, cameraDebug, playerDebug)
 }
 
 func (world *World) Update() {
 	world.Player.Update()
 
-	world.Game.Camera.Position[0] = world.Player.Object.Position.X - (world.Game.Camera.ViewPort[0] / 2)
+	world.Space.Step(1.0 / float64(ebiten.TPS()))
+
+	world.Camera.Offset.X = -world.Player.Body.Position().X
+
+	world.Drawer.GeoM.Reset()
+	world.Drawer.GeoM.Translate(world.Camera.Offset.X, world.Camera.Offset.Y)
+	world.Drawer.GeoM.Scale(world.Camera.Zoom, world.Camera.Zoom)
+	world.Drawer.GeoM.Rotate(world.Camera.Rotate)
+	world.Drawer.GeoM.Translate(float64(world.Game.Width)/2, float64(world.Game.Height)/2)
 }
 
 func (world *World) Draw(screen *ebiten.Image) {
 	screen.Fill(SkyColor)
 
-	for _, o := range world.Space.Objects() {
-		if o.HasTags("solid") {
-			drawColor := SnowColor
-			vector.DrawFilledRect(screen, float32(o.Position.X), float32(o.Position.Y), float32(o.Size.X), float32(o.Size.Y), drawColor, false)
-		}
-	}
+	cp.DrawSpace(
+		world.Space,
+		world.Drawer.WithScreen(screen),
+	)
 
-	world.Player.Draw(screen)
+	world.Player.Draw(screen, *world.Drawer.GeoM)
 }

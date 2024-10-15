@@ -6,7 +6,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"golang.org/x/image/math/f64"
 	_ "image/png"
 )
 
@@ -19,8 +18,6 @@ type Game struct {
 	Width, Height int
 	World         *World
 	Debug         bool
-	Camera        Camera
-	WorldImage    *ebiten.Image
 }
 
 func (g *Game) Layout(_, _ int) (screenWidth, screenHeight int) {
@@ -54,9 +51,7 @@ func drawDebugText(screen *ebiten.Image, worldDebug string) {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.World.Draw(g.WorldImage)
-
-	g.Camera.Render(g.WorldImage, screen)
+	g.World.Draw(screen)
 
 	if g.Debug {
 		drawDebugText(screen, g.World.GenerateDebugString())
@@ -65,12 +60,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 func NewGame() (*Game, error) {
 	g := &Game{
-		Width:  640,
-		Height: 480,
-		Camera: Camera{ViewPort: f64.Vec2{ScreenWidth, ScreenHeight}},
+		Width:  ScreenWidth,
+		Height: ScreenHeight,
 	}
-
-	g.WorldImage = ebiten.NewImage(ScreenWidth*10, ScreenHeight*5)
 
 	g.World = NewWorld(g)
 

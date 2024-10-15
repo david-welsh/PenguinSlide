@@ -6,18 +6,19 @@ import (
 	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/hajimehoshi/ebiten/v2/vector"
-	"github.com/solarlune/resolv"
+	"github.com/jakecoffman/cp/v2"
 	"image"
-	"image/color"
 	"log"
 	"math"
 )
 
 type Player struct {
-	Object      *resolv.Object
-	Speed       resolv.Vector
-	OnGround    *resolv.Object
+	Space       *cp.Space
+	Body        *cp.Body
+	Shape       *cp.Shape
+	Speed       cp.Vector
+	CurrentBox  cp.Vector
+	OnGround    bool
 	FacingRight bool
 	Sliding     bool
 	Game        *Game
@@ -26,8 +27,8 @@ type Player struct {
 var (
 	walkingImage *ebiten.Image
 	slidingImage *ebiten.Image
-	walkBox      resolv.Vector
-	slideBox     resolv.Vector
+	walkBox      cp.Vector
+	slideBox     cp.Vector
 )
 
 func loadImage(img []byte) *ebiten.Image {
@@ -49,151 +50,101 @@ func init() {
 	walkingImage = loadImage(assets.WalkingPng)
 	slidingImage = loadImage(assets.SlidingPng)
 
-	walkBox = resolv.Vector{X: 100, Y: 140}
-	slideBox = resolv.Vector{X: 170, Y: 70}
-}
-
-func (p *Player) adjustCollisionBox(newWidth, newHeight float64) {
-	oldHeight := p.Object.Size.Y
-	oldWidth := p.Object.Size.X
-
-	p.Object.Size.X = newWidth
-	p.Object.Size.Y = newHeight
-
-	p.Object.SetShape(resolv.NewRectangle(0, 0, newWidth, newHeight))
-	p.Object.Position.Y += oldHeight - newHeight
-	if !p.FacingRight {
-		p.Object.Position.X -= newWidth - oldWidth
-	}
+	walkBox = cp.Vector{X: 50, Y: 70}
+	slideBox = cp.Vector{X: 85, Y: 35}
 }
 
 func (p *Player) Update() {
-	friction := 0.01
-	accel := 0.2 + friction
-	maxWalkSpeed := 1.0
-	maxSlideSpeed := 6.0
-	gravity := 0.75
-	jumpSpeed := 14.0
-
-	p.Speed.Y += gravity
-
-	if ebiten.IsKeyPressed(ebiten.KeySpace) || (p.Speed.X > maxWalkSpeed || p.Speed.X < -maxWalkSpeed) {
-		p.Sliding = true
-		p.adjustCollisionBox(slideBox.X, slideBox.Y)
-	} else {
-		p.Sliding = false
-		p.adjustCollisionBox(walkBox.X, walkBox.Y)
-	}
-
-	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.GamepadAxisValue(0, 0) > 0.1 {
-		p.Speed.X += accel
-		p.FacingRight = true
-	}
-
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.GamepadAxisValue(0, 0) < -0.1 {
-		p.Speed.X -= accel
-		p.FacingRight = false
-	}
-
-	if p.Speed.X > friction {
-		p.Speed.X -= friction
-	} else if p.Speed.X < -friction {
-		p.Speed.X += friction
-	} else {
-		p.Speed.X = 0
-	}
+	maxWalkSpeed := 100.0
+	maxSlideSpeed := 300.0
 
 	maxSpeed := maxWalkSpeed
 	if p.Sliding {
 		maxSpeed = maxSlideSpeed
 	}
+	if math.Abs(p.Body.Velocity().X) > maxSpeed {
+		vel := p.Body.Velocity()
+		p.Body.SetVelocity(math.Copysign(maxSpeed, vel.X), vel.Y)
+	}
 
-	if p.Speed.X > maxSpeed {
-		p.Speed.X = maxSpeed
-	} else if p.Speed.X < -maxSpeed {
-		p.Speed.X = -maxSpeed
+	wasSliding := p.Sliding
+	if ebiten.IsKeyPressed(ebiten.KeySpace) || math.Abs(p.Body.Velocity().X) > maxWalkSpeed {
+		p.Sliding = true
+		if !wasSliding {
+			p.Shape.Space().RemoveShape(p.Shape)
+			p.Shape = p.Space.AddShape(cp.NewBox(p.Body, slideBox.X*2, slideBox.Y*2, 0))
+			p.Shape.SetFriction(0.7)
+			newPos := p.Body.Position()
+			newPos.Y += p.CurrentBox.Y / 2
+			p.Body.SetPosition(newPos)
+			p.CurrentBox = slideBox
+		}
+	} else {
+		p.Sliding = false
+		if wasSliding {
+			p.Shape.Space().RemoveShape(p.Shape)
+			p.Shape = p.Space.AddShape(cp.NewBox(p.Body, walkBox.X*2, walkBox.Y*2, 0))
+			p.Shape.SetFriction(0.7)
+			newPos := p.Body.Position()
+			newPos.Y -= p.CurrentBox.Y
+			p.Body.SetPosition(newPos)
+			p.CurrentBox = walkBox
+		}
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.GamepadAxisValue(0, 0) > 0.1 {
+		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: 500, Y: 0}, cp.Vector{})
+		p.FacingRight = true
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.GamepadAxisValue(0, 0) < -0.1 {
+		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: -500, Y: 0}, cp.Vector{})
+		p.FacingRight = false
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyX) || inpututil.IsGamepadButtonJustPressed(0, 0) {
-		if p.OnGround != nil {
-			p.Speed.Y = -jumpSpeed
-		}
+		p.Body.ApplyImpulseAtLocalPoint(cp.Vector{X: 0, Y: -400}, cp.Vector{})
 	}
-
-	dx := p.Speed.X
-
-	p.Object.Position.X += dx
-
-	p.OnGround = nil
-
-	dy := p.Speed.Y
-
-	dy = math.Max(math.Min(dy, 16), -16)
-
-	checkDistance := dy
-	if dy >= 0 {
-		checkDistance++
-	}
-
-	if check := p.Object.Check(0, checkDistance, "solid", "platform", "ramp"); check != nil {
-		slide, slideOK := check.SlideAgainstCell(check.Cells[0], "solid")
-
-		if dy < 0 && check.Cells[0].ContainsTags("solid") && slideOK && math.Abs(slide.X) <= 8 {
-			p.Object.Position.X += slide.X
-		} else {
-			if solids := check.ObjectsByTags("solid"); len(solids) > 0 && (p.OnGround == nil || p.OnGround.Position.Y >= solids[0].Position.Y) {
-				dy = check.ContactWithObject(solids[0]).Y
-				p.Speed.Y = 0
-
-				if solids[0].Position.Y > p.Object.Position.Y {
-					p.OnGround = solids[0]
-				}
-
-			}
-		}
-	}
-
-	p.Object.Position.Y += dy
-
-	p.Object.Update()
 }
 
-func (p *Player) Draw(screen *ebiten.Image) {
+func (p *Player) Draw(screen *ebiten.Image, mat ebiten.GeoM) {
 	img := walkingImage
 	if p.Sliding {
 		img = slidingImage
 	}
 
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(0.1, 0.1)
+	op.GeoM.Scale(0.093, 0.093)
+	op.GeoM.Translate(-p.CurrentBox.X, -p.CurrentBox.Y)
 	if !p.FacingRight {
 		op.GeoM.Scale(-1, 1)
-		op.GeoM.Translate(p.Object.Size.X, 0)
+		op.GeoM.Translate(-p.CurrentBox.X/2, 0)
 	}
-	op.GeoM.Translate(float64(p.Object.Position.X), float64(p.Object.Position.Y))
+	op.GeoM.Translate(p.Body.Position().X, p.Body.Position().Y)
+	op.GeoM.Rotate(p.Body.Angle())
+	op.GeoM.Concat(mat)
 	screen.DrawImage(img, op)
-
-	if p.Game.Debug {
-		cl := color.RGBA{R: 255, A: 120}
-		vector.DrawFilledRect(screen, float32(p.Object.Position.X), float32(p.Object.Position.Y), float32(p.Object.Size.X), float32(p.Object.Size.Y), cl, false)
-	}
 }
 
 func (p *Player) GenerateDebugText() string {
-	speed := fmt.Sprintf("Speed: %f, %f", p.Speed.X, p.Speed.Y)
-	position := fmt.Sprintf("X: %f, %f", p.Object.Position.X, p.Object.Position.Y)
+	speed := fmt.Sprintf("Speed: %.1f, %.1f", p.Body.Velocity().X, p.Body.Velocity().Y)
+	position := fmt.Sprintf("X: %.1f, %.1f", p.Body.Position().X, p.Body.Position().Y)
 	return fmt.Sprintf("%s\n%s", speed, position)
 }
 
-func NewPlayer(space *resolv.Space, game *Game) *Player {
-	p := &Player{
-		Object: resolv.NewObject(32, 0, walkBox.X, walkBox.Y),
-		Game:   game,
+func NewPlayer(space *cp.Space, game *Game) *Player {
+	body := space.AddBody(cp.NewBody(2.0, 500))
+	body.SetPosition(cp.Vector{X: 100, Y: 100})
+
+	walkingShape := space.AddShape(cp.NewBox(body, walkBox.X*2, walkBox.Y*2, 0))
+	walkingShape.SetFriction(0.1)
+
+	return &Player{
+		Space:       space,
+		Body:        body,
+		Shape:       walkingShape,
+		Game:        game,
+		CurrentBox:  walkBox,
+		FacingRight: true,
 	}
-
-	p.Object.SetShape(resolv.NewRectangle(0, 0, p.Object.Size.X, p.Object.Size.Y))
-
-	space.Add(p.Object)
-
-	return p
 }
