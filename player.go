@@ -114,14 +114,14 @@ func (p *Player) Draw(screen *ebiten.Image, mat ebiten.GeoM) {
 	}
 
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(0.093, 0.093)
-	op.GeoM.Translate(-p.CurrentBox.X, -p.CurrentBox.Y)
+	sign := 1
 	if !p.FacingRight {
-		op.GeoM.Scale(-1, 1)
-		op.GeoM.Translate(-p.CurrentBox.X/2, 0)
+		sign = -1
 	}
-	op.GeoM.Translate(p.Body.Position().X, p.Body.Position().Y)
+	op.GeoM.Scale(0.093*float64(sign), 0.093)
+	op.GeoM.Translate(-float64(sign)*p.CurrentBox.X, -p.CurrentBox.Y)
 	op.GeoM.Rotate(p.Body.Angle())
+	op.GeoM.Translate(p.Body.Position().X, p.Body.Position().Y)
 	op.GeoM.Concat(mat)
 	screen.DrawImage(img, op)
 }
