@@ -10,7 +10,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	ebiten.SetWindowSize(ScreenWidth, ScreenHeight)
+	ebiten.SetWindowSize(game.Width, game.Height)
 	ebiten.SetWindowTitle("Penguin Slide")
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

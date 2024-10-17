@@ -16,7 +16,6 @@ type Player struct {
 	Space       *cp.Space
 	Body        *cp.Body
 	Shape       *cp.Shape
-	Speed       cp.Vector
 	CurrentBox  cp.Vector
 	OnGround    bool
 	FacingRight bool
@@ -72,8 +71,9 @@ func (p *Player) Update() {
 		p.Sliding = true
 		if !wasSliding {
 			p.Shape.Space().RemoveShape(p.Shape)
-			p.Shape = p.Space.AddShape(cp.NewBox(p.Body, slideBox.X*2, slideBox.Y*2, 0))
-			p.Shape.SetFriction(0.7)
+			p.Shape = p.Space.AddShape(cp.NewBox(p.Body, slideBox.X, 1, slideBox.Y))
+			p.Shape.SetFriction(0.3)
+			p.Shape.SetElasticity(0)
 			newPos := p.Body.Position()
 			newPos.Y += p.CurrentBox.Y / 2
 			p.Body.SetPosition(newPos)
@@ -83,8 +83,9 @@ func (p *Player) Update() {
 		p.Sliding = false
 		if wasSliding {
 			p.Shape.Space().RemoveShape(p.Shape)
-			p.Shape = p.Space.AddShape(cp.NewBox(p.Body, walkBox.X*2, walkBox.Y*2, 0))
-			p.Shape.SetFriction(0.3)
+			p.Shape = p.Space.AddShape(cp.NewBox(p.Body, walkBox.X/2, walkBox.Y, walkBox.X/2))
+			p.Shape.SetFriction(0.7)
+			p.Shape.SetElasticity(0)
 			newPos := p.Body.Position()
 			newPos.Y -= p.CurrentBox.Y
 			p.Body.SetPosition(newPos)
@@ -93,12 +94,12 @@ func (p *Player) Update() {
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.GamepadAxisValue(0, 0) > 0.1 {
-		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: 500, Y: 0}, cp.Vector{})
+		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: 750, Y: 0}, cp.Vector{})
 		p.FacingRight = true
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.GamepadAxisValue(0, 0) < -0.1 {
-		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: -500, Y: 0}, cp.Vector{})
+		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: -750, Y: 0}, cp.Vector{})
 		p.FacingRight = false
 	}
 
@@ -136,7 +137,7 @@ func NewPlayer(space *cp.Space, game *Game) *Player {
 	body := space.AddBody(cp.NewBody(2.0, 500))
 	body.SetPosition(cp.Vector{X: 100, Y: 100})
 
-	walkingShape := space.AddShape(cp.NewBox(body, walkBox.X*2, walkBox.Y*2, 0))
+	walkingShape := space.AddShape(cp.NewBox(body, walkBox.X/2, walkBox.Y, walkBox.X/2))
 	walkingShape.SetFriction(0.7)
 
 	return &Player{

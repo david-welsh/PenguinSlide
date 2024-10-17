@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Path to Line Segments</title>
+</head>
+<body>
+
+<h1>Upload SVG and Convert Paths to Line Segments</h1>
+
+<input type="file" id="fileInput" accept=".svg">
+<br><br>
+
+<label for="numSegments">Number of Segments:</label>
+<input type="number" id="numSegments" value="10" min="1">
+<br><br>
+
+<button id="processButton" disabled>Process SVG</button>
+<br><br>
+
+<a id="downloadLink" style="display: none;">Download CSV</a>
+
+<script>
+    document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+
+    let svgContent;
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                svgContent = new DOMParser().parseFromString(e.target.result, 'image/svg+xml');
+                document.getElementById('processButton').disabled = false;
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    document.getElementById('processButton').addEventListener('click', processSVG);
+
+    function processSVG() {
+        const paths = svgContent.querySelectorAll('path');
+        let csvData = "";
+        const numSegments = parseInt(document.getElementById('numSegments').value);
+
+        paths.forEach(path => {
+            const totalLength = path.getTotalLength();
+            const segmentLength = totalLength / numSegments;
+
+            // Start from (0, 0)
+            let startPoint = { x: path.getPointAtLength(0).x, y: path.getPointAtLength(0).y };
+            let previousPoint = startPoint;
+
+            for (let i = 1; i <= numSegments; i++) {
+                const currentPoint = path.getPointAtLength(i * segmentLength);
+                csvData += `${previousPoint.x - startPoint.x},${previousPoint.y - startPoint.y},${currentPoint.x - startPoint.x},${currentPoint.y - startPoint.y}\n`;
+                previousPoint = currentPoint;
+            }
+
+            // Ensure the path's final anchor point is included
+            const finalPoint = path.getPointAtLength(totalLength);
+            csvData += `${previousPoint.x - startPoint.x},${previousPoint.y - startPoint.y},${finalPoint.x - startPoint.x},${finalPoint.y - startPoint.y}\n`;
+        });
+
+        downloadCSV(csvData);
+    }
+
+    function downloadCSV(csvData) {
+        const blob = new Blob([csvData], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+
+        const downloadLink = document.getElementById('downloadLink');
+        downloadLink.href = url;
+        downloadLink.download = 'line_segments.csv';
+        downloadLink.style.display = 'block';
+        downloadLink.textContent = 'Download CSV';
+    }
+</script>
+
+</body>
+</html>

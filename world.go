@@ -1,11 +1,16 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"github.com/demouth/ebitencp"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jakecoffman/cp/v2"
 	"image/color"
+	"log"
+	"math"
+	"os"
+	"strconv"
 )
 
 var (
@@ -25,43 +30,83 @@ type World struct {
 	Camera Camera
 }
 
-func NewWorld(game *Game) *World {
+func NewWorld(game *Game, level string) *World {
 	w := &World{Game: game}
-	w.Init()
+	w.Init(level)
 	return w
 }
 
-func (world *World) Init() {
+type LevelSegment struct {
+	A cp.Vector
+	B cp.Vector
+}
+
+func readCsvFile(filePath string) [][]string {
+	f, err := os.Open(filePath)
+	if err != nil {
+		log.Fatal("Unable to read input file "+filePath, err)
+	}
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			log.Fatalf("Failed to close level file %s", filePath)
+		}
+	}(f)
+
+	csvReader := csv.NewReader(f)
+	records, err := csvReader.ReadAll()
+	if err != nil {
+		log.Fatal("Unable to parse file as CSV for "+filePath, err)
+	}
+
+	return records
+}
+
+func parseFloatIgnore(f string) float64 {
+	f64, _ := strconv.ParseFloat(f, 64)
+	return f64
+}
+
+func ParseLevel(level string) []LevelSegment {
+	data := readCsvFile(fmt.Sprintf("levels/%s.csv", level))
+	segments := make([]LevelSegment, len(data))
+	for i, seg := range data {
+		segments[i] = LevelSegment{
+			A: cp.Vector{X: parseFloatIgnore(seg[0]), Y: parseFloatIgnore(seg[1]) + 350},
+			B: cp.Vector{X: parseFloatIgnore(seg[2]), Y: parseFloatIgnore(seg[3]) + 350},
+		}
+	}
+	return segments
+}
+
+func (world *World) Init(level string) {
 	gw := float64(world.Game.Width)
 	gh := float64(world.Game.Height)
 
 	world.Camera = Camera{
-		Zoom:   1,
-		Offset: cp.Vector{X: -ScreenWidth / 2, Y: -ScreenHeight / 2},
+		Zoom:   1.0,
+		Offset: cp.Vector{X: -gw / 2, Y: -gh / 2},
 	}
 
 	world.Drawer = ebitencp.NewDrawer(0, 0)
 	world.Drawer.FlipYAxis = true
-	world.Drawer.GeoM.Translate(ScreenWidth/2, ScreenHeight/2)
+	world.Drawer.GeoM.Translate(gw/2, gh/2)
 
 	world.Space = cp.NewSpace()
 
 	world.Space.SleepTimeThreshold = 0.5
 	world.Space.SetCollisionSlop(0.5)
 
-	fs1 := cp.NewSegment(world.Space.StaticBody, cp.Vector{X: 0, Y: gh - 110}, cp.Vector{X: gw / 2, Y: gh - 110}, 0)
-	fs1.SetFriction(0.7)
-	world.Space.AddShape(fs1)
+	levelSegments := ParseLevel(level)
 
-	fs2 := cp.NewSegment(world.Space.StaticBody, cp.Vector{X: gw / 2, Y: gh - 110}, cp.Vector{X: gw, Y: gh - 80}, 0)
-	fs2.SetFriction(0.2)
-	world.Space.AddShape(fs2)
+	for _, segment := range levelSegments {
+		shape := cp.NewSegment(world.Space.StaticBody, segment.A, segment.B, 2)
+		shape.SetFriction(0.1)
+		shape.SetElasticity(0)
+		world.Space.AddShape(shape)
+	}
 
-	fs3 := cp.NewSegment(world.Space.StaticBody, cp.Vector{X: gw, Y: gh - 80}, cp.Vector{X: gw * 2, Y: gh - 80}, 0)
-	fs3.SetFriction(0.2)
-	world.Space.AddShape(fs3)
-
-	world.Space.Iterations = 10
+	world.Space.Iterations = 30
 	world.Space.SetGravity(cp.Vector{Y: 400})
 	world.Space.SetCollisionSlop(0.5)
 
@@ -81,6 +126,8 @@ func (world *World) Update() {
 	world.Space.Step(1.0 / float64(ebiten.TPS()))
 
 	world.Camera.Offset.X = -world.Player.Body.Position().X
+	world.Camera.Offset.Y = -world.Player.Body.Position().Y
+	world.Camera.Zoom = 1.0 - ((math.Abs(world.Player.Body.Velocity().X) / 300) * 0.2)
 
 	world.Drawer.GeoM.Reset()
 	world.Drawer.GeoM.Translate(world.Camera.Offset.X, world.Camera.Offset.Y)
@@ -92,10 +139,12 @@ func (world *World) Update() {
 func (world *World) Draw(screen *ebiten.Image) {
 	screen.Fill(SkyColor)
 
-	cp.DrawSpace(
-		world.Space,
-		world.Drawer.WithScreen(screen),
-	)
+	if world.Game.Debug {
+		cp.DrawSpace(
+			world.Space,
+			world.Drawer.WithScreen(screen),
+		)
+	}
 
 	world.Player.Draw(screen, *world.Drawer.GeoM)
 }

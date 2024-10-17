@@ -21,7 +21,7 @@ type Game struct {
 }
 
 func (g *Game) Layout(_, _ int) (screenWidth, screenHeight int) {
-	return ScreenWidth, ScreenHeight
+	return g.Width, g.Height
 }
 
 func (g *Game) Update() error {
@@ -40,13 +40,13 @@ func (g *Game) Update() error {
 	return quit
 }
 
-func generateDebugString() string {
-	screenInfo := fmt.Sprintf("%d FPS, Screen: %dx%d", int(ebiten.ActualFPS()), ScreenWidth, ScreenHeight)
+func (g *Game) generateDebugString() string {
+	screenInfo := fmt.Sprintf("%d FPS, Screen: %dx%d", int(ebiten.ActualFPS()), g.Width, g.Height)
 	return fmt.Sprintf("%s", screenInfo)
 }
 
-func drawDebugText(screen *ebiten.Image, worldDebug string) {
-	debugText := fmt.Sprintf("%s\n%s", generateDebugString(), worldDebug)
+func (g *Game) drawDebugText(screen *ebiten.Image, worldDebug string) {
+	debugText := fmt.Sprintf("%s\n%s", g.generateDebugString(), worldDebug)
 	ebitenutil.DebugPrint(screen, debugText)
 }
 
@@ -54,7 +54,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.World.Draw(screen)
 
 	if g.Debug {
-		drawDebugText(screen, g.World.GenerateDebugString())
+		g.drawDebugText(screen, g.World.GenerateDebugString())
 	}
 }
 
@@ -64,7 +64,7 @@ func NewGame() (*Game, error) {
 		Height: ScreenHeight,
 	}
 
-	g.World = NewWorld(g)
+	g.World = NewWorld(g, "Level1")
 
 	return g, nil
 }
