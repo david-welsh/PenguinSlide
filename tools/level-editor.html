@@ -50,19 +50,23 @@
             const segmentLength = totalLength / numSegments;
 
             // Start from (0, 0)
-            let startPoint = { x: path.getPointAtLength(0).x, y: path.getPointAtLength(0).y };
-            let previousPoint = startPoint;
+            let previousPoint = { x: path.getPointAtLength(0).x, y: path.getPointAtLength(0).y };
 
             for (let i = 1; i <= numSegments; i++) {
                 const currentPoint = path.getPointAtLength(i * segmentLength);
-                csvData += `${previousPoint.x - startPoint.x},${previousPoint.y - startPoint.y},${currentPoint.x - startPoint.x},${currentPoint.y - startPoint.y}\n`;
+                csvData += `line,${previousPoint.x},${previousPoint.y},${currentPoint.x},${currentPoint.y }\n`;
                 previousPoint = currentPoint;
             }
 
             // Ensure the path's final anchor point is included
             const finalPoint = path.getPointAtLength(totalLength);
-            csvData += `${previousPoint.x - startPoint.x},${previousPoint.y - startPoint.y},${finalPoint.x - startPoint.x},${finalPoint.y - startPoint.y}\n`;
+            csvData += `line,${previousPoint.x},${previousPoint.y},${finalPoint.x},${finalPoint.y}\n`;
         });
+
+        const rect = svgContent.querySelector('rect');
+        const x = rect.getAttribute('x') || 0;
+        const y = rect.getAttribute('y') || 0;
+        csvData += `player,${x},${y},,\n`;
 
         downloadCSV(csvData);
     }

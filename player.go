@@ -133,9 +133,9 @@ func (p *Player) GenerateDebugText() string {
 	return fmt.Sprintf("%s\n%s", speed, position)
 }
 
-func NewPlayer(space *cp.Space, game *Game) *Player {
+func NewPlayer(space *cp.Space, game *Game, pos cp.Vector) *Player {
 	body := space.AddBody(cp.NewBody(2.0, 500))
-	body.SetPosition(cp.Vector{X: 100, Y: 100})
+	body.SetPosition(pos)
 
 	walkingShape := space.AddShape(cp.NewBox(body, walkBox.X/2, walkBox.Y, walkBox.X/2))
 	walkingShape.SetFriction(0.7)

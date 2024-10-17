@@ -63,20 +63,25 @@ func readCsvFile(filePath string) [][]string {
 }
 
 func parseFloatIgnore(f string) float64 {
-	f64, _ := strconv.ParseFloat(f, 64)
+	f64, _ := strconv.ParseFloat(f, 32)
 	return f64
 }
 
-func ParseLevel(level string) []LevelSegment {
+func ParseLevel(level string) (segments []LevelSegment, playerPos cp.Vector) {
 	data := readCsvFile(fmt.Sprintf("levels/%s.csv", level))
-	segments := make([]LevelSegment, len(data))
-	for i, seg := range data {
-		segments[i] = LevelSegment{
-			A: cp.Vector{X: parseFloatIgnore(seg[0]), Y: parseFloatIgnore(seg[1]) + 350},
-			B: cp.Vector{X: parseFloatIgnore(seg[2]), Y: parseFloatIgnore(seg[3]) + 350},
+	for _, seg := range data {
+		if seg[0] == "line" {
+			segments = append(segments, LevelSegment{
+				A: cp.Vector{X: parseFloatIgnore(seg[1]), Y: parseFloatIgnore(seg[2])},
+				B: cp.Vector{X: parseFloatIgnore(seg[3]), Y: parseFloatIgnore(seg[4])},
+			})
+		} else if seg[0] == "player" {
+			playerPos.X = parseFloatIgnore(seg[1])
+			playerPos.Y = parseFloatIgnore(seg[2])
 		}
 	}
-	return segments
+
+	return segments, playerPos
 }
 
 func (world *World) Init(level string) {
@@ -97,10 +102,10 @@ func (world *World) Init(level string) {
 	world.Space.SleepTimeThreshold = 0.5
 	world.Space.SetCollisionSlop(0.5)
 
-	levelSegments := ParseLevel(level)
+	levelSegments, playerPos := ParseLevel(level)
 
 	for _, segment := range levelSegments {
-		shape := cp.NewSegment(world.Space.StaticBody, segment.A, segment.B, 2)
+		shape := cp.NewSegment(world.Space.StaticBody, segment.A, segment.B, 0)
 		shape.SetFriction(0.1)
 		shape.SetElasticity(0)
 		world.Space.AddShape(shape)
@@ -110,7 +115,7 @@ func (world *World) Init(level string) {
 	world.Space.SetGravity(cp.Vector{Y: 400})
 	world.Space.SetCollisionSlop(0.5)
 
-	world.Player = NewPlayer(world.Space, world.Game)
+	world.Player = NewPlayer(world.Space, world.Game, playerPos)
 }
 
 func (world *World) GenerateDebugString() string {

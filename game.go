@@ -64,7 +64,7 @@ func NewGame() (*Game, error) {
 		Height: ScreenHeight,
 	}
 
-	g.World = NewWorld(g, "Level1")
+	g.World = NewWorld(g, "Level1_test")
 
 	return g, nil
 }
