@@ -75,7 +75,7 @@ func (p *Player) Update() {
 			p.Shape.SetFriction(0.3)
 			p.Shape.SetElasticity(0)
 			newPos := p.Body.Position()
-			newPos.Y += p.CurrentBox.Y / 2
+			newPos.Y += p.CurrentBox.Y / 3
 			p.Body.SetPosition(newPos)
 			p.CurrentBox = slideBox
 		}
@@ -87,7 +87,7 @@ func (p *Player) Update() {
 			p.Shape.SetFriction(0.7)
 			p.Shape.SetElasticity(0)
 			newPos := p.Body.Position()
-			newPos.Y -= p.CurrentBox.Y
+			newPos.Y -= p.CurrentBox.Y / 1.5
 			p.Body.SetPosition(newPos)
 			p.CurrentBox = walkBox
 		}

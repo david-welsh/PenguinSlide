@@ -23,16 +23,18 @@ var (
 )
 
 type World struct {
-	Game   *Game
-	Space  *cp.Space
-	Player *Player
-	Drawer *ebitencp.Drawer
-	Camera Camera
+	Game       *Game
+	Level      string
+	Space      *cp.Space
+	Player     *Player
+	Drawer     *ebitencp.Drawer
+	Camera     Camera
+	SnowHolder SnowHolder
 }
 
 func NewWorld(game *Game, level string) *World {
-	w := &World{Game: game}
-	w.Init(level)
+	w := &World{Game: game, Level: level}
+	w.Init()
 	return w
 }
 
@@ -84,7 +86,11 @@ func ParseLevel(level string) (segments []LevelSegment, playerPos cp.Vector) {
 	return segments, playerPos
 }
 
-func (world *World) Init(level string) {
+func (world *World) Reset() {
+	world.Init()
+}
+
+func (world *World) Init() {
 	gw := float64(world.Game.Width)
 	gh := float64(world.Game.Height)
 
@@ -102,7 +108,7 @@ func (world *World) Init(level string) {
 	world.Space.SleepTimeThreshold = 0.5
 	world.Space.SetCollisionSlop(0.5)
 
-	levelSegments, playerPos := ParseLevel(level)
+	levelSegments, playerPos := ParseLevel(world.Level)
 
 	for _, segment := range levelSegments {
 		shape := cp.NewSegment(world.Space.StaticBody, segment.A, segment.B, 0)
@@ -114,6 +120,8 @@ func (world *World) Init(level string) {
 	world.Space.Iterations = 30
 	world.Space.SetGravity(cp.Vector{Y: 400})
 	world.Space.SetCollisionSlop(0.5)
+
+	world.SnowHolder.Init(*world.Drawer.GeoM)
 
 	world.Player = NewPlayer(world.Space, world.Game, playerPos)
 }
@@ -127,6 +135,8 @@ func (world *World) GenerateDebugString() string {
 
 func (world *World) Update() {
 	world.Player.Update()
+
+	world.SnowHolder.Update(*world.Drawer.GeoM)
 
 	world.Space.Step(1.0 / float64(ebiten.TPS()))
 
@@ -152,4 +162,6 @@ func (world *World) Draw(screen *ebiten.Image) {
 	}
 
 	world.Player.Draw(screen, *world.Drawer.GeoM)
+
+	world.SnowHolder.Draw(screen, *world.Drawer.GeoM)
 }
