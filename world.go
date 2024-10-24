@@ -114,6 +114,7 @@ func (world *World) Init() {
 		shape := cp.NewSegment(world.Space.StaticBody, segment.A, segment.B, 0)
 		shape.SetFriction(0.1)
 		shape.SetElasticity(0)
+		shape.SetCollisionType(2)
 		world.Space.AddShape(shape)
 	}
 
@@ -124,6 +125,15 @@ func (world *World) Init() {
 	world.SnowHolder.Init(*world.Drawer.GeoM)
 
 	world.Player = NewPlayer(world.Space, world.Game, playerPos)
+
+	onGround := world.Space.NewCollisionHandler(1, 2)
+	onGround.BeginFunc = func(arb *cp.Arbiter, space *cp.Space, userData interface{}) bool {
+		world.Player.OnGround = true
+		return true
+	}
+	onGround.SeparateFunc = func(arb *cp.Arbiter, space *cp.Space, userData interface{}) {
+		world.Player.OnGround = false
+	}
 }
 
 func (world *World) GenerateDebugString() string {

@@ -37,6 +37,10 @@ func (g *Game) Update() error {
 		quit = errors.New("quit")
 	}
 
+	if ebiten.IsKeyPressed(ebiten.KeyR) {
+		g.World.Reset()
+	}
+
 	return quit
 }
 

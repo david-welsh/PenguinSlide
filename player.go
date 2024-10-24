@@ -54,8 +54,8 @@ func init() {
 }
 
 func (p *Player) Update() {
-	maxWalkSpeed := 100.0
-	maxSlideSpeed := 300.0
+	maxWalkSpeed := 250.0
+	maxSlideSpeed := 750.0
 
 	maxSpeed := maxWalkSpeed
 	if p.Sliding {
@@ -74,6 +74,7 @@ func (p *Player) Update() {
 			p.Shape = p.Space.AddShape(cp.NewBox(p.Body, slideBox.X, 1, slideBox.Y))
 			p.Shape.SetFriction(0.3)
 			p.Shape.SetElasticity(0)
+			p.Shape.SetCollisionType(1)
 			newPos := p.Body.Position()
 			newPos.Y += p.CurrentBox.Y / 3
 			p.Body.SetPosition(newPos)
@@ -86,6 +87,7 @@ func (p *Player) Update() {
 			p.Shape = p.Space.AddShape(cp.NewBox(p.Body, walkBox.X/2, walkBox.Y, walkBox.X/2))
 			p.Shape.SetFriction(0.7)
 			p.Shape.SetElasticity(0)
+			p.Shape.SetCollisionType(1)
 			newPos := p.Body.Position()
 			newPos.Y -= p.CurrentBox.Y / 1.5
 			p.Body.SetPosition(newPos)
@@ -93,17 +95,25 @@ func (p *Player) Update() {
 		}
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.GamepadAxisValue(0, 0) > 0.1 {
-		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: 750, Y: 0}, cp.Vector{})
+	if p.OnGround && (ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.GamepadAxisValue(0, 0) > 0.1) {
+		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: 1200, Y: 0}, cp.Vector{})
 		p.FacingRight = true
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.GamepadAxisValue(0, 0) < -0.1 {
-		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: -750, Y: 0}, cp.Vector{})
+	if p.OnGround && (ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.GamepadAxisValue(0, 0) < -0.1) {
+		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: -1200, Y: 0}, cp.Vector{})
 		p.FacingRight = false
 	}
 
-	if inpututil.IsKeyJustPressed(ebiten.KeyX) || inpututil.IsGamepadButtonJustPressed(0, 0) {
+	if ebiten.IsKeyPressed(ebiten.KeyZ) && !p.OnGround {
+		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: 10}, cp.Vector{Y: 100})
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyC) && !p.OnGround {
+		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: 10}, cp.Vector{Y: -100})
+	}
+
+	if p.OnGround && (inpututil.IsKeyJustPressed(ebiten.KeyX) || inpututil.IsGamepadButtonJustPressed(0, 0)) {
 		p.Body.ApplyImpulseAtLocalPoint(cp.Vector{X: 0, Y: -400}, cp.Vector{})
 	}
 }
@@ -139,6 +149,7 @@ func NewPlayer(space *cp.Space, game *Game, pos cp.Vector) *Player {
 
 	walkingShape := space.AddShape(cp.NewBox(body, walkBox.X/2, walkBox.Y, walkBox.X/2))
 	walkingShape.SetFriction(0.7)
+	walkingShape.SetCollisionType(1)
 
 	return &Player{
 		Space:       space,
@@ -147,5 +158,6 @@ func NewPlayer(space *cp.Space, game *Game, pos cp.Vector) *Player {
 		Game:        game,
 		CurrentBox:  walkBox,
 		FacingRight: true,
+		OnGround:    true,
 	}
 }
