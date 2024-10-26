@@ -16,8 +16,9 @@ const (
 
 type Game struct {
 	Width, Height int
-	World         *World
+	Scene         Scene
 	Debug         bool
+	ShouldQuit    bool
 }
 
 func (g *Game) Layout(_, _ int) (screenWidth, screenHeight int) {
@@ -27,18 +28,21 @@ func (g *Game) Layout(_, _ int) (screenWidth, screenHeight int) {
 func (g *Game) Update() error {
 	var quit error
 
-	g.World.Update()
+	err := g.Scene.Update()
+	if err != nil {
+		return err
+	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyF1) {
 		g.Debug = !g.Debug
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
-		quit = errors.New("quit")
+		g.ShouldQuit = true
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyR) {
-		g.World.Reset()
+	if g.ShouldQuit {
+		quit = errors.New("quit")
 	}
 
 	return quit
@@ -55,20 +59,34 @@ func (g *Game) drawDebugText(screen *ebiten.Image, worldDebug string) {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.World.Draw(screen)
+	err := g.Scene.Draw(screen)
+	if err != nil {
+		return
+	}
 
 	if g.Debug {
-		g.drawDebugText(screen, g.World.GenerateDebugString())
+		g.drawDebugText(screen, g.Scene.GenerateDebugString())
 	}
 }
 
 func NewGame() (*Game, error) {
+	MenuInit()
 	g := &Game{
 		Width:  ScreenWidth,
 		Height: ScreenHeight,
 	}
 
-	g.World = NewWorld(g, "Level1_test")
+	g.Scene = NewMenu(
+		NewMenuItem("Level 1", func() {
+			g.Scene = NewWorld(g, "Level1")
+		}),
+		NewMenuItem("Level 2", func() {
+			g.Scene = NewWorld(g, "Level2")
+		}),
+		NewMenuItem("Quit", func() {
+			g.ShouldQuit = true
+		}),
+	)
 
 	return g, nil
 }

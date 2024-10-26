@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/demouth/ebitencp"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/jakecoffman/cp/v2"
 	"image/color"
 	"log"
@@ -30,6 +31,7 @@ type World struct {
 	Drawer     *ebitencp.Drawer
 	Camera     Camera
 	SnowHolder SnowHolder
+	Paused     bool
 }
 
 func NewWorld(game *Game, level string) *World {
@@ -143,7 +145,15 @@ func (world *World) GenerateDebugString() string {
 	return fmt.Sprintf("%s\n%s\n%s", worldDebug, cameraDebug, playerDebug)
 }
 
-func (world *World) Update() {
+func (world *World) Update() error {
+	if inpututil.IsKeyJustPressed(ebiten.KeyP) {
+		world.Paused = !world.Paused
+	}
+
+	if world.Paused {
+		return nil
+	}
+
 	world.Player.Update()
 
 	world.SnowHolder.Update(*world.Drawer.GeoM)
@@ -159,9 +169,11 @@ func (world *World) Update() {
 	world.Drawer.GeoM.Scale(world.Camera.Zoom, world.Camera.Zoom)
 	world.Drawer.GeoM.Rotate(world.Camera.Rotate)
 	world.Drawer.GeoM.Translate(float64(world.Game.Width)/2, float64(world.Game.Height)/2)
+
+	return nil
 }
 
-func (world *World) Draw(screen *ebiten.Image) {
+func (world *World) Draw(screen *ebiten.Image) error {
 	screen.Fill(SkyColor)
 
 	if world.Game.Debug {
@@ -174,4 +186,6 @@ func (world *World) Draw(screen *ebiten.Image) {
 	world.Player.Draw(screen, *world.Drawer.GeoM)
 
 	world.SnowHolder.Draw(screen, *world.Drawer.GeoM)
+
+	return nil
 }

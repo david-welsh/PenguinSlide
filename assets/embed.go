@@ -10,4 +10,7 @@ var (
 
 	//go:embed Walk_sprite.png
 	WalkingPng []byte
+
+	//go:embed fonts/Lilita_One/LilitaOne-Regular.ttf
+	MenuFontTtf []byte
 )
