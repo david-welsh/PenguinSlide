@@ -82,7 +82,7 @@ func (p *Player) Update() {
 	}
 
 	wasSliding := p.Sliding
-	if ebiten.IsKeyPressed(ebiten.KeySpace) || math.Abs(p.Body.Velocity().X) > maxWalkSpeed {
+	if ebiten.IsKeyPressed(ebiten.KeyShiftLeft) || math.Abs(p.Body.Velocity().X) > maxWalkSpeed {
 		p.Sliding = true
 		if !wasSliding {
 			p.Shape.Space().RemoveShape(p.Shape)
@@ -120,15 +120,15 @@ func (p *Player) Update() {
 		p.FacingRight = false
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyZ) && !p.OnGround {
+	if ebiten.IsKeyPressed(ebiten.KeyQ) && !p.OnGround {
 		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: 10}, cp.Vector{Y: 100})
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyC) && !p.OnGround {
+	if ebiten.IsKeyPressed(ebiten.KeyE) && !p.OnGround {
 		p.Body.ApplyForceAtLocalPoint(cp.Vector{X: 10}, cp.Vector{Y: -100})
 	}
 
-	if p.OnGround && (inpututil.IsKeyJustPressed(ebiten.KeyX) || inpututil.IsGamepadButtonJustPressed(0, 0)) {
+	if p.OnGround && (inpututil.IsKeyJustPressed(ebiten.KeySpace) || inpututil.IsGamepadButtonJustPressed(0, 0)) {
 		p.Body.ApplyImpulseAtLocalPoint(cp.Vector{X: 0, Y: -400}, cp.Vector{})
 	}
 }

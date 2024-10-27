@@ -95,6 +95,12 @@ func (world *World) Reset() {
 
 func (world *World) Init() {
 	world.Menu = NewMenu(
+		&color.RGBA{
+			R: 0,
+			G: 0,
+			B: 0,
+			A: 100,
+		},
 		NewMenuItem("Return", func() {
 			world.Paused = false
 		}),
@@ -150,7 +156,7 @@ func (world *World) GenerateDebugString() string {
 }
 
 func (world *World) Update() error {
-	if inpututil.IsKeyJustPressed(ebiten.KeyP) {
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		world.Paused = !world.Paused
 	}
 

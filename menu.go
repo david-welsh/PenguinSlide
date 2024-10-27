@@ -12,11 +12,11 @@ import (
 )
 
 var (
-	BgColor = color.RGBA{
+	DefaultBgColor = color.RGBA{
 		R: 180,
 		G: 180,
 		B: 200,
-		A: 30,
+		A: 255,
 	}
 	TextColor = color.RGBA{
 		R: 65,
@@ -51,12 +51,18 @@ func NewMenuItem(title string, action func()) *MenuItem {
 type Menu struct {
 	MenuItems []*MenuItem
 	Selected  int
+	bgColor   color.RGBA
 }
 
-func NewMenu(menuItems ...*MenuItem) *Menu {
+func NewMenu(bgColor *color.RGBA, menuItems ...*MenuItem) *Menu {
+	bgCol := DefaultBgColor
+	if bgColor != nil {
+		bgCol = *bgColor
+	}
 	return &Menu{
 		MenuItems: menuItems,
 		Selected:  0,
+		bgColor:   bgCol,
 	}
 }
 
@@ -80,7 +86,7 @@ func (m *Menu) Update() error {
 }
 
 func (m *Menu) Draw(screen *ebiten.Image) error {
-	vector.DrawFilledRect(screen, -5, -5, ScreenWidth+10, ScreenHeight+10, BgColor, false)
+	vector.DrawFilledRect(screen, -5, -5, ScreenWidth+10, ScreenHeight+10, m.bgColor, false)
 
 	height := (ScreenHeight - 100) / len(m.MenuItems)
 

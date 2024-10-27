@@ -86,7 +86,7 @@ func (g *Game) LoadMenu() {
 		g.ShouldQuit = true
 	}))
 
-	g.Scene = NewMenu(menuItems...)
+	g.Scene = NewMenu(nil, menuItems...)
 }
 
 func NewGame() (*Game, error) {
