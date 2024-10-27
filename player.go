@@ -2,13 +2,10 @@ package main
 
 import (
 	"PenguinSlide/assets"
-	"bytes"
 	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/jakecoffman/cp/v2"
-	"image"
-	"log"
 	"math"
 )
 
@@ -30,24 +27,9 @@ var (
 	slideBox     cp.Vector
 )
 
-func loadImage(img []byte) *ebiten.Image {
-	wImg, _, err := image.Decode(bytes.NewReader(img))
-	if err != nil {
-		log.Fatal(err)
-	}
-	origImage := ebiten.NewImageFromImage(wImg)
-
-	s := origImage.Bounds().Size()
-	newImage := ebiten.NewImage(s.X, s.Y)
-
-	op := &ebiten.DrawImageOptions{}
-	newImage.DrawImage(origImage, op)
-	return newImage
-}
-
 func init() {
-	walkingImage = loadImage(assets.WalkingPng)
-	slidingImage = loadImage(assets.SlidingPng)
+	walkingImage = LoadImage(assets.WalkingPng)
+	slidingImage = LoadImage(assets.SlidingPng)
 
 	walkBox = cp.Vector{X: 50, Y: 70}
 	slideBox = cp.Vector{X: 85, Y: 35}

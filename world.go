@@ -1,6 +1,7 @@
 package main
 
 import (
+	"PenguinSlide/assets"
 	"encoding/csv"
 	"fmt"
 	"github.com/demouth/ebitencp"
@@ -21,6 +22,7 @@ var (
 		B: 200,
 		A: 255,
 	}
+	groundImage *ebiten.Image
 )
 
 type World struct {
@@ -187,8 +189,56 @@ func (world *World) Update() error {
 	return nil
 }
 
+func drawWorldSegment(screen *ebiten.Image, ta, tb cp.Vector, mat ebiten.GeoM) {
+	if groundImage == nil {
+		groundImage = LoadImage(assets.GroundPng)
+	}
+	for _, drawPoint := range drawPoints(ta, tb) {
+		op := ebiten.DrawImageOptions{}
+		op.GeoM.Scale(0.2, 0.2)
+		op.GeoM.Translate(drawPoint.X, drawPoint.Y)
+		op.GeoM.Concat(mat)
+		screen.DrawImage(groundImage, &op)
+	}
+}
+
+func drawPoints(ta, tb cp.Vector) []cp.Vector {
+	v := cp.Vector{
+		X: tb.X - ta.X,
+		Y: tb.Y - ta.Y,
+	}
+	l := vectorLength(v)
+	u := v.Mult(1 / l)
+	d := 5.0
+	count := int(l/d) + 1
+
+	points := make([]cp.Vector, count)
+	for i := 0; i < count; i++ {
+		points[i] = ta.Add(u.Mult(float64(i) * d))
+	}
+	return points
+}
+
+func vectorLength(v cp.Vector) float64 {
+	return math.Sqrt(math.Pow(v.X, 2) + math.Pow(v.Y, 2))
+}
+
 func (world *World) Draw(screen *ebiten.Image) error {
 	screen.Fill(SkyColor)
+
+	world.Space.EachShape(func(s *cp.Shape) {
+		switch s.Class.(type) {
+		case *cp.Segment:
+			segment := s.Class.(*cp.Segment)
+			ta := segment.TransformA()
+			tb := segment.TransformB()
+			drawWorldSegment(screen, ta, tb, *world.Drawer.GeoM)
+		}
+	})
+
+	world.Player.Draw(screen, *world.Drawer.GeoM)
+
+	world.SnowHolder.Draw(screen, *world.Drawer.GeoM)
 
 	if world.Game.Debug {
 		cp.DrawSpace(
@@ -196,10 +246,6 @@ func (world *World) Draw(screen *ebiten.Image) error {
 			world.Drawer.WithScreen(screen),
 		)
 	}
-
-	world.Player.Draw(screen, *world.Drawer.GeoM)
-
-	world.SnowHolder.Draw(screen, *world.Drawer.GeoM)
 
 	if world.Paused {
 		err := world.Menu.Draw(screen)

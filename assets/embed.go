@@ -13,4 +13,7 @@ var (
 
 	//go:embed fonts/Lilita_One/LilitaOne-Regular.ttf
 	MenuFontTtf []byte
+
+	//go:embed Ground.png
+	GroundPng []byte
 )
