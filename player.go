@@ -53,7 +53,22 @@ func init() {
 	slideBox = cp.Vector{X: 85, Y: 35}
 }
 
+func (p *Player) checkGround() {
+	groundNormal := cp.Vector{}
+	p.Body.EachArbiter(func(arb *cp.Arbiter) {
+		n := arb.Normal().Neg()
+
+		if n.Y < groundNormal.Y {
+			groundNormal = n
+		}
+	})
+
+	p.OnGround = groundNormal.Y != 0
+}
+
 func (p *Player) Update() {
+	p.checkGround()
+
 	maxWalkSpeed := 250.0
 	maxSlideSpeed := 750.0
 
@@ -140,7 +155,8 @@ func (p *Player) Draw(screen *ebiten.Image, mat ebiten.GeoM) {
 func (p *Player) GenerateDebugText() string {
 	speed := fmt.Sprintf("Speed: %.1f, %.1f", p.Body.Velocity().X, p.Body.Velocity().Y)
 	position := fmt.Sprintf("X: %.1f, %.1f", p.Body.Position().X, p.Body.Position().Y)
-	return fmt.Sprintf("%s\n%s", speed, position)
+	onGround := fmt.Sprintf("On Ground: %t", p.OnGround)
+	return fmt.Sprintf("%s\n%s - %s", speed, position, onGround)
 }
 
 func NewPlayer(space *cp.Space, game *Game, pos cp.Vector) *Player {

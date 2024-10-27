@@ -127,15 +127,6 @@ func (world *World) Init() {
 	world.SnowHolder.Init(*world.Drawer.GeoM)
 
 	world.Player = NewPlayer(world.Space, world.Game, playerPos)
-
-	onGround := world.Space.NewCollisionHandler(1, 2)
-	onGround.BeginFunc = func(arb *cp.Arbiter, space *cp.Space, userData interface{}) bool {
-		world.Player.OnGround = true
-		return true
-	}
-	onGround.SeparateFunc = func(arb *cp.Arbiter, space *cp.Space, userData interface{}) {
-		world.Player.OnGround = false
-	}
 }
 
 func (world *World) GenerateDebugString() string {
