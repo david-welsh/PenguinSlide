@@ -74,21 +74,26 @@ func parseFloatIgnore(f string) float64 {
 	return f64
 }
 
-func ParseLevel(level string) (segments []LevelSegment, playerPos cp.Vector) {
+func ParseLevel(level string) (segments []LevelSegment, playerPos cp.Vector, maxX float64) {
 	data := readCsvFile(fmt.Sprintf("levels/%s.csv", level))
 	for _, seg := range data {
 		if seg[0] == "line" {
-			segments = append(segments, LevelSegment{
+			levelSegment := LevelSegment{
 				A: cp.Vector{X: parseFloatIgnore(seg[1]), Y: parseFloatIgnore(seg[2])},
 				B: cp.Vector{X: parseFloatIgnore(seg[3]), Y: parseFloatIgnore(seg[4])},
-			})
+			}
+			segments = append(segments, levelSegment)
+			segmentMaxX := math.Max(levelSegment.A.X, levelSegment.B.X)
+			if segmentMaxX > maxX {
+				maxX = segmentMaxX
+			}
 		} else if seg[0] == "player" {
 			playerPos.X = parseFloatIgnore(seg[1])
 			playerPos.Y = parseFloatIgnore(seg[2])
 		}
 	}
 
-	return segments, playerPos
+	return segments, playerPos, maxX
 }
 
 func (world *World) Reset() {
@@ -131,7 +136,7 @@ func (world *World) Init() {
 	world.Space.SleepTimeThreshold = 0.5
 	world.Space.SetCollisionSlop(0.5)
 
-	levelSegments, playerPos := ParseLevel(world.Level)
+	levelSegments, playerPos, maxX := ParseLevel(world.Level)
 
 	for _, segment := range levelSegments {
 		shape := cp.NewSegment(world.Space.StaticBody, segment.A, segment.B, 0)
@@ -145,7 +150,7 @@ func (world *World) Init() {
 	world.Space.SetGravity(cp.Vector{Y: 400})
 	world.Space.SetCollisionSlop(0.5)
 
-	world.SnowHolder.Init(*world.Drawer.GeoM)
+	world.SnowHolder.Init(*world.Drawer.GeoM, maxX)
 
 	world.Player = NewPlayer(world.Space, world.Game, playerPos)
 }

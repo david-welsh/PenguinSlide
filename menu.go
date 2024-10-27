@@ -105,8 +105,9 @@ func (m *Menu) Draw(screen *ebiten.Image) error {
 			fontFace = selectedFontFace
 		}
 		op := &text.DrawOptions{}
-		op.GeoM.Translate(float64(50), float64(50+(height*i)))
+		op.GeoM.Translate(float64(ScreenWidth/2), float64(50+(height*i)))
 		op.ColorScale.ScaleWithColor(TextColor)
+		op.PrimaryAlign = text.AlignCenter
 		text.Draw(screen, item.Title, fontFace, op)
 	}
 

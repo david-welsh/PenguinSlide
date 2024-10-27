@@ -11,9 +11,11 @@ import (
 
 type SnowHolder struct {
 	Snows *list.List
+	MaxX  float64
 }
 
-func (s *SnowHolder) Init(mat ebiten.GeoM) {
+func (s *SnowHolder) Init(mat ebiten.GeoM, maxX float64) {
+	s.MaxX = maxX
 	for i := 0; i < 5000; i++ {
 		s.Update(mat)
 	}
@@ -25,7 +27,7 @@ func (s *SnowHolder) Update(mat ebiten.GeoM) {
 	}
 
 	if s.Snows.Len() < 5000 && rand.Intn(4) < 3 {
-		s.Snows.PushBack(NewSnow(mat))
+		s.Snows.PushBack(NewSnow(mat, s.MaxX))
 	}
 
 	for e := s.Snows.Front(); e != nil; e = e.Next() {
@@ -53,9 +55,9 @@ type Snow struct {
 	size      int
 }
 
-func NewSnow(mat ebiten.GeoM) *Snow {
+func NewSnow(mat ebiten.GeoM, maxX float64) *Snow {
 	life := rand.Intn(600) + 2000
-	x := -3000 + rand.Float64()*(ScreenWidth*15)
+	x := -3000 + rand.Float64()*maxX + 3000
 	y := -1000.0
 
 	speed := 0.4 + rand.Float64()*(0.8-0.4)
