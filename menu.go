@@ -6,6 +6,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"image/color"
 	"log"
 )
@@ -15,7 +16,7 @@ var (
 		R: 180,
 		G: 180,
 		B: 200,
-		A: 255,
+		A: 30,
 	}
 	TextColor = color.RGBA{
 		R: 65,
@@ -79,7 +80,7 @@ func (m *Menu) Update() error {
 }
 
 func (m *Menu) Draw(screen *ebiten.Image) error {
-	screen.Fill(BgColor)
+	vector.DrawFilledRect(screen, -5, -5, ScreenWidth+10, ScreenHeight+10, BgColor, false)
 
 	height := (ScreenHeight - 100) / len(m.MenuItems)
 

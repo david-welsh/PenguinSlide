@@ -32,6 +32,7 @@ type World struct {
 	Camera     Camera
 	SnowHolder SnowHolder
 	Paused     bool
+	Menu       *Menu
 }
 
 func NewWorld(game *Game, level string) *World {
@@ -93,6 +94,18 @@ func (world *World) Reset() {
 }
 
 func (world *World) Init() {
+	world.Menu = NewMenu(
+		NewMenuItem("Return", func() {
+			world.Paused = false
+		}),
+		NewMenuItem("Main Menu", func() {
+			world.Game.LoadMenu()
+		}),
+		NewMenuItem("Quit Game", func() {
+			world.Game.ShouldQuit = true
+		}),
+	)
+
 	gw := float64(world.Game.Width)
 	gh := float64(world.Game.Height)
 
@@ -142,6 +155,10 @@ func (world *World) Update() error {
 	}
 
 	if world.Paused {
+		err := world.Menu.Update()
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -177,6 +194,13 @@ func (world *World) Draw(screen *ebiten.Image) error {
 	world.Player.Draw(screen, *world.Drawer.GeoM)
 
 	world.SnowHolder.Draw(screen, *world.Drawer.GeoM)
+
+	if world.Paused {
+		err := world.Menu.Draw(screen)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

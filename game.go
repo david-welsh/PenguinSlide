@@ -14,11 +14,17 @@ const (
 	ScreenHeight = 480
 )
 
+type WorldDescriptor struct {
+	key  string
+	name string
+}
+
 type Game struct {
 	Width, Height int
 	Scene         Scene
 	Debug         bool
 	ShouldQuit    bool
+	Worlds        []WorldDescriptor
 }
 
 func (g *Game) Layout(_, _ int) (screenWidth, screenHeight int) {
@@ -35,10 +41,6 @@ func (g *Game) Update() error {
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyF1) {
 		g.Debug = !g.Debug
-	}
-
-	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
-		g.ShouldQuit = true
 	}
 
 	if g.ShouldQuit {
@@ -69,24 +71,45 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 }
 
+func (g *Game) LoadWorld(world string) {
+	g.Scene = NewWorld(g, world)
+}
+
+func (g *Game) LoadMenu() {
+	menuItems := make([]*MenuItem, len(g.Worlds))
+	for i, t := range g.Worlds {
+		menuItems[i] = NewMenuItem(t.name, func() {
+			g.LoadWorld(t.key)
+		})
+	}
+	menuItems = append(menuItems, NewMenuItem("Quit", func() {
+		g.ShouldQuit = true
+	}))
+
+	g.Scene = NewMenu(menuItems...)
+}
+
 func NewGame() (*Game, error) {
 	MenuInit()
+
+	worlds := []WorldDescriptor{
+		{
+			key:  "Level1",
+			name: "Tutorial",
+		},
+		{
+			key:  "Level2",
+			name: "Main World",
+		},
+	}
+
 	g := &Game{
 		Width:  ScreenWidth,
 		Height: ScreenHeight,
+		Worlds: worlds,
 	}
 
-	g.Scene = NewMenu(
-		NewMenuItem("Level 1", func() {
-			g.Scene = NewWorld(g, "Level1")
-		}),
-		NewMenuItem("Level 2", func() {
-			g.Scene = NewWorld(g, "Level2")
-		}),
-		NewMenuItem("Quit", func() {
-			g.ShouldQuit = true
-		}),
-	)
+	g.LoadMenu()
 
 	return g, nil
 }
