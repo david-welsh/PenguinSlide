@@ -3,6 +3,7 @@ package main
 import (
 	"PenguinSlide/assets"
 	"bytes"
+	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -19,9 +20,9 @@ var (
 		A: 255,
 	}
 	TextColor = color.RGBA{
-		R: 65,
-		G: 10,
-		B: 45,
+		R: 165,
+		G: 110,
+		B: 145,
 		A: 255,
 	}
 	fontFaceSource *text.GoTextFaceSource
@@ -67,6 +68,14 @@ func NewMenu(bgColor *color.RGBA, menuItems ...*MenuItem) *Menu {
 }
 
 func (m *Menu) Update() error {
+	x, y := ebiten.CursorPosition()
+	if i := m.inButtonBounds(x, y); i != nil {
+		m.Selected = *i
+		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+			m.MenuItems[m.Selected].Action()
+		}
+	}
+
 	if inpututil.IsKeyJustPressed(ebiten.KeyDown) {
 		m.Selected += 1
 		m.Selected %= len(m.MenuItems)
@@ -96,7 +105,7 @@ func (m *Menu) Draw(screen *ebiten.Image) error {
 	}
 	selectedFontFace := &text.GoTextFace{
 		Source: fontFaceSource,
-		Size:   float64(height / 2),
+		Size:   float64(height/2) * 0.75,
 	}
 
 	for i, item := range m.MenuItems {
@@ -108,9 +117,33 @@ func (m *Menu) Draw(screen *ebiten.Image) error {
 		op.GeoM.Translate(float64(ScreenWidth/2), float64(50+(height*i)))
 		op.ColorScale.ScaleWithColor(TextColor)
 		op.PrimaryAlign = text.AlignCenter
-		text.Draw(screen, item.Title, fontFace, op)
+		st := item.Title
+		if i == m.Selected {
+			st = fmt.Sprintf("> %s <", item.Title)
+		}
+		text.Draw(screen, st, fontFace, op)
 	}
 
+	return nil
+}
+
+func (m *Menu) getButtonBounds(i int) (t, b, l, r float64) {
+	height := (ScreenHeight - 100) / len(m.MenuItems)
+	t = float64(50+height*i) - 10
+	b = t + float64(height/2)*0.75 + 10
+	l = 50
+	r = ScreenWidth - 50
+
+	return t, b, l, r
+}
+
+func (m *Menu) inButtonBounds(x, y int) *int {
+	for i := range m.MenuItems {
+		t, b, l, r := m.getButtonBounds(i)
+		if float64(x) > l && float64(x) < r && float64(y) > t && float64(y) < b {
+			return &i
+		}
+	}
 	return nil
 }
 
