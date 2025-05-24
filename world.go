@@ -30,6 +30,7 @@ type World struct {
 	Level      string
 	Space      *cp.Space
 	Player     *Player
+	Finish     cp.Vector
 	Drawer     *ebitencp.Drawer
 	Camera     Camera
 	SnowHolder SnowHolder
@@ -74,7 +75,7 @@ func parseFloatIgnore(f string) float64 {
 	return f64
 }
 
-func ParseLevel(level string) (segments []LevelSegment, playerPos cp.Vector, maxX float64) {
+func ParseLevel(level string) (segments []LevelSegment, playerPos cp.Vector, finishPos cp.Vector, maxX float64) {
 	data := readCsvFile(fmt.Sprintf("levels/%s.csv", level))
 	for _, seg := range data {
 		if seg[0] == "line" {
@@ -90,10 +91,13 @@ func ParseLevel(level string) (segments []LevelSegment, playerPos cp.Vector, max
 		} else if seg[0] == "player" {
 			playerPos.X = parseFloatIgnore(seg[1])
 			playerPos.Y = parseFloatIgnore(seg[2])
+		} else if seg[0] == "finish" {
+			finishPos.X = parseFloatIgnore(seg[1])
+			finishPos.Y = parseFloatIgnore(seg[2])
 		}
 	}
 
-	return segments, playerPos, maxX
+	return segments, playerPos, finishPos, maxX
 }
 
 func (world *World) Reset() {
@@ -136,7 +140,9 @@ func (world *World) Init() {
 	world.Space.SleepTimeThreshold = 0.5
 	world.Space.SetCollisionSlop(0.5)
 
-	levelSegments, playerPos, maxX := ParseLevel(world.Level)
+	levelSegments, playerPos, finishPos, maxX := ParseLevel(world.Level)
+
+	world.Finish = finishPos
 
 	for _, segment := range levelSegments {
 		shape := cp.NewSegment(world.Space.StaticBody, segment.A, segment.B, 0)

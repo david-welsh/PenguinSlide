@@ -63,10 +63,15 @@
             csvData += `line,${previousPoint.x},${previousPoint.y},${finalPoint.x},${finalPoint.y}\n`;
         });
 
-        const rect = svgContent.querySelector('rect');
-        const x = rect.getAttribute('x') || 0;
-        const y = rect.getAttribute('y') || 0;
-        csvData += `player,${x},${y},,\n`;
+        const playerRect = svgContent.querySelector('rect');
+        const playerX = playerRect.getAttribute('x') || 0;
+        const playerY = playerRect.getAttribute('y') || 0;
+        csvData += `player,${playerX},${playerY},,\n`;
+
+        const finishCircle = svgContent.querySelector('circle');
+        const finishX = finishCircle.getAttribute('x') || 0;
+        const finishY = finishCircle.getAttribute('y') || 0;
+        csvData += `finish,${finishX},${finishY},,\n`;
 
         downloadCSV(csvData);
     }

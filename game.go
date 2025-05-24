@@ -25,6 +25,7 @@ type Game struct {
 	Debug         bool
 	ShouldQuit    bool
 	Worlds        []WorldDescriptor
+	currentWorld  string
 }
 
 func (g *Game) Layout(_, _ int) (screenWidth, screenHeight int) {
@@ -41,6 +42,10 @@ func (g *Game) Update() error {
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyF1) {
 		g.Debug = !g.Debug
+	}
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyF5) && g.currentWorld != "" {
+		g.LoadWorld(g.currentWorld)
 	}
 
 	if g.ShouldQuit {
@@ -73,6 +78,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 func (g *Game) LoadWorld(world string) {
 	g.Scene = NewWorld(g, world)
+	g.currentWorld = world
 }
 
 func (g *Game) LoadMenu() {
@@ -90,8 +96,6 @@ func (g *Game) LoadMenu() {
 }
 
 func NewGame() (*Game, error) {
-	MenuInit()
-
 	worlds := []WorldDescriptor{
 		{
 			key:  "Level1",
