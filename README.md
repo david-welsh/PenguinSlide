@@ -1,5 +1,7 @@
 # Penguin Slide
 
+<img src="assets/Slide_sprite.png" width="50%">
+
 Penguin slide is a simple 2D game developed in Ebitengine and Go. It uses the 2D physics engine Chipmunk.
 There isn't really a goal yet in the game, it has so far been developed only as an experiment in the usage of the above libraries.
 
