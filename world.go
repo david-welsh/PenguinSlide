@@ -165,7 +165,8 @@ func (world *World) GenerateDebugString() string {
 	worldDebug := ""
 	cameraDebug := world.Camera.GenerateDebugText()
 	playerDebug := world.Player.GenerateDebugText()
-	return fmt.Sprintf("%s\n%s\n%s", worldDebug, cameraDebug, playerDebug)
+	menuDebug := world.Menu.GenerateDebugString()
+	return fmt.Sprintf("%s\n%s\n%s\n%s", worldDebug, cameraDebug, playerDebug, menuDebug)
 }
 
 func (world *World) Update() error {

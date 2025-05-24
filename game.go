@@ -99,11 +99,11 @@ func NewGame() (*Game, error) {
 	worlds := []WorldDescriptor{
 		{
 			key:  "Level1",
-			name: "Tutorial",
+			name: "Level 1",
 		},
 		{
 			key:  "Level2",
-			name: "Main World",
+			name: "Level 2",
 		},
 	}
 

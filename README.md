@@ -10,14 +10,15 @@ Run the game with
 go run PenguinSlide
 ```
 
-There are two worlds at present: 'Tutorial' and 'Main World'. Both have small level geometries.
+There are two worlds at present: 'Level 1' and 'Level 2'. Both have small level geometries to test out movement.
 
-Controls are as follows:
+Controls:
 Left and right arrow keys: Move left and right
 Left shift: Start sliding
 Space: Jump
 Q and E: Control rotation left and right while in the air
 Escape: Pause
+F5: Restart level
 
 F1: Open debug
 
